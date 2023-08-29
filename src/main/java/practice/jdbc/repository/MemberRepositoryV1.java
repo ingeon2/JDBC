@@ -1,17 +1,27 @@
 package practice.jdbc.repository;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.jdbc.support.JdbcUtils;
 import practice.jdbc.connection.DBConnectionUtil;
 import practice.jdbc.domain.Member;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.NoSuchElementException;
 
+
+// JDBC - DataSource사용, JdbcUtils 사용
 @Slf4j
-public class MemberRepository {
+public class MemberRepositoryV1 {
+
+    private final DataSource dataSource;
+
+    public MemberRepositoryV1(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
 
     public Member save(Member member) throws SQLException{ //생성
         
@@ -132,41 +142,17 @@ public class MemberRepository {
 
 
     //여기 아래부턴 private 매서드
-    private void close(Connection con, PreparedStatement statement, ResultSet rs) { 
-        //열어준 객체들을 닫아줄 매서드
-
-        if(rs != null) {
-            try {
-                rs.close();
-            }
-            catch (SQLException e) {
-                log.info("error", e);
-            }
-        }
-
-
-        if(statement != null) {
-            try {
-                statement.close();
-            }
-            catch (SQLException e) {
-                log.info("error", e);
-            }
-        }
-
-        if(con != null) {
-            try {
-                con.close();
-            }
-            catch (SQLException e) {
-                log.info("error", e);
-            }
-        }
+    private void close(Connection con, PreparedStatement statement, ResultSet rs) {
+        JdbcUtils.closeResultSet(rs);
+        JdbcUtils.closeConnection(con);
+        JdbcUtils.closeStatement(statement);
     }
 
 
-    private Connection getConnection() {
-        return DBConnectionUtil.getConnection();
+    private Connection getConnection() throws SQLException {
+        Connection con = dataSource.getConnection();
+        log.info("get connection={}, class={}", con, con.getClass());
+        return con;
     }
 
 }
